@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
-import plotly.graph_objects as go
+import plotly_graphics as go
 from streamlit_autorefresh import st_autorefresh
 from datetime import datetime
 
@@ -16,7 +16,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
-st_autorefresh(interval=REFRESH_INTERVAL, key="gammamaps_refresh")
+
+# --- AUTO REFRESH ---
+st_autorefresh(interval=REFRESH_INTERVAL, key="data_refresh")
 
 # --- ENHANCED CSS WITH ANIMATIONS ---
 st.markdown(
@@ -33,20 +35,41 @@ st.markdown(
             background-size: 200% auto;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            animation: shimmer 3s linear infinite;
+            animation: shine 4s linear infinite;
         }
 
-        @keyframes shimmer {
-            0% { background-position: 0% center; }
-            100% { background-position: 200% center; }
+        @keyframes shine {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
         }
 
-        /* Glassmorphism Widget */
+        .subtitle-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(0, 255, 0, 0.06);
+            border: 1px solid rgba(0, 255, 0, 0.4);
+            font-size: 13px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #b2ff59;
+        }
+
+        .subtitle-badge span.dot {
+            width: 7px; height: 7px;
+            border-radius: 999px;
+            background: #00e676;
+            box-shadow: 0 0 12px rgba(0, 230, 118, 0.9);
+        }
+
         .core-widget {
-            background: rgba(10, 10, 10, 0.4);
-            backdrop-filter: blur(20px) saturate(180%);
-            border-radius: 16px;
-            padding: 24px;
+            background: radial-gradient(circle at top left, rgba(0, 255, 0, 0.08), transparent 55%),
+                        radial-gradient(circle at bottom right, rgba(0, 230, 118, 0.06), transparent 55%),
+                        #050505;
+            border-radius: 20px;
+            padding: 18px 22px 14px 22px;
             margin-bottom: 30px;
             text-align: center;
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -59,7 +82,6 @@ st.markdown(
             box-shadow: 0 8px 32px rgba(0, 255, 0, 0.2);
         }
 
-        /* Animated Status Glow */
         @keyframes pulse-green {
             0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 0, 0.3); }
             50% { box-shadow: 0 0 40px rgba(0, 255, 0, 0.6); }
@@ -77,41 +99,75 @@ st.markdown(
 
         .live-dot {
             height: 10px; width: 10px;
-            background: radial-gradient(circle, #0f0 0%, #0a0 100%);
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-            animation: blink 2s ease-in-out infinite;
-            box-shadow: 0 0 10px #0f0;
+            border-radius: 999px;
+            background: #00e676;
+            box-shadow: 0 0 14px rgba(0, 230, 118, 0.9);
+            animation: blink 1.2s infinite;
         }
 
-        .symbol-text {
-            font-family: 'SF Pro Display', 'Roboto Mono', monospace;
-            font-size: 20px;
-            font-weight: 700;
-            color: #fff;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        .ticker-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 16px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            font-size: 13px;
         }
 
-        .price-text {
-            font-family: 'SF Pro Display', 'Roboto Mono', monospace;
-            font-size: 32px;
-            font-weight: 800;
-            background: linear-gradient(90deg, #fff 0%, #aaa 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .ticker-pill .change-up {
+            color: #00e676;
+        }
+
+        .ticker-pill .label {
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.09em;
+            color: #b0bec5;
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #cfd8dc;
+        }
+
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 999px;
+        }
+
+        .status-dot.green {
+            background: #00e676;
+            box-shadow: 0 0 12px rgba(0, 230, 118, 0.8);
+        }
+
+        .status-dot.purple {
+            background: #d500f9;
+            box-shadow: 0 0 12px rgba(213, 0, 249, 0.8);
         }
 
         .timestamp-badge {
-            font-family: 'Roboto Mono', monospace;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 10px;
+            border-radius: 999px;
             font-size: 11px;
-            color: #888;
-            background: rgba(255,255,255,0.05);
-            padding: 6px 12px;
-            border-radius: 20px;
-            display: inline-block;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #90a4ae;
+        }
+
+        .timestamp-badge svg {
+            margin-right: 2px;
         }
 
         .timestamp-badge:hover {
@@ -143,75 +199,114 @@ st.markdown(
             100% { background-position: -200% 0; }
         }
 
-        .skeleton {
-            background: linear-gradient(
-                90deg,
-                rgba(255, 255, 255, 0.05) 25%,
-                rgba(255, 255, 255, 0.1) 50%,
-                rgba(255, 255, 255, 0.05) 75%
-            );
+        .skeleton-bar {
+            height: 22px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #222 0%, #333 50%, #222 100%);
             background-size: 200% 100%;
             animation: skeleton-loading 1.5s infinite;
+            margin-bottom: 10px;
         }
 
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        .bottom-bar {
+            position: sticky;
+            bottom: 0;
+            background: #000000;
+            padding: 10px 16px 6px 16px;
+            border-top: 1px solid #222;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.8);
         }
 
-        ::-webkit-scrollbar-track {
-            background: #0a0a0a;
+        .bottom-label {
+            font-size: 13px;
+            color: #aaa;
         }
 
-        ::-webkit-scrollbar-thumb {
-            background: #333;
-            border-radius: 4px;
+        .bottom-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
         }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: #555;
+        .bottom-change {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4CAF50;
         }
+
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# --- HEADER ---
-col_logo, col_selector, col_status = st.columns([2, 2, 1])
+# --- PAGE HEADER ---
+header_col1, header_col2 = st.columns([2, 1])
 
-with col_logo:
-    st.markdown('<h1 class="gammamaps-logo">GammaMaps</h1>', unsafe_allow_html=True)
-    st.caption("QUANTITATIVE MARKET FORCE TERMINAL")
-
-with col_selector:
-    selected_symbol = st.selectbox("Select Ticker", AVAILABLE_SYMBOLS, index=0, key="ticker_select")
-
-with col_status:
-    current_time = datetime.now().strftime("%I:%M %p EST")
+with header_col1:
     st.markdown(
-        f'<div class="timestamp-badge">UPDATED: {current_time}</div>',
+        """
+        <div style="margin-bottom: 8px;">
+            <span class="subtitle-badge">
+                <span class="dot"></span>
+                <span>Quantitative Market Force Terminal</span>
+            </span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown('<div class="gammamaps-logo">GAMMAMAPS</div>', unsafe_allow_html=True)
+
+with header_col2:
+    st.markdown(
+        """
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:4px;">
+            <div class="status-chip">
+                <span class="status-dot green"></span>
+                Live GEX Feeds
+            </div>
+            <div class="status-chip">
+                <span class="status-dot purple"></span>
+                0DTE Focus
+            </div>
+        </div>
+        """,
         unsafe_allow_html=True,
     )
 
-# --- FETCH EXPIRATIONS FOR SELECTED TICKER ---
+st.write("")  # small spacing
+
+# --- SIDEBAR CONTROLS AREA ---
+control_col1, control_col2, control_col3 = st.columns([1.4, 1.2, 1.2])
+
+with control_col1:
+    selected_symbol = st.selectbox("Select Ticker", AVAILABLE_SYMBOLS, index=0)
+
+with control_col2:
+    refresh_display = f"{REFRESH_INTERVAL // 1000}s"
+    st.text_input("Auto-refresh", refresh_display, disabled=True)
+
+with control_col3:
+    st.text_input("View Mode", "Net GEX Heatmap", disabled=True)
+
+st.write("")
+
+# --- FETCH EXPIRATIONS ---
 try:
-    exp_response = requests.get(EXPIRATIONS_URL, params={"symbol": selected_symbol}, timeout=2)
-    if exp_response.status_code == 200:
-        expirations = exp_response.json().get("expirations", [])[:3]
-    else:
-        expirations = []
+    resp = requests.get(EXPIRATIONS_URL, params={"symbol": selected_symbol}, timeout=5)
+    resp.raise_for_status()
+    expirations = resp.json().get("expirations", [])
 except Exception:
     expirations = []
 
 if not expirations:
-    st.error(f"Could not fetch expirations for {selected_symbol}. Check backend.")
+    st.error("No expirations available from backend.")
     st.stop()
 
-# --- FETCH DATA FOR EACH EXPIRATION ---
+# --- FETCH NODES FOR EACH EXPIRY ---
 expiry_data = {}
 for exp in expirations:
     try:
-        r = requests.get(API_URL, params={"symbol": selected_symbol, "expiration": exp}, timeout=3)
+        r = requests.get(API_URL, params={"symbol": selected_symbol, "expiration": exp}, timeout=8)
         if r.status_code == 200:
             expiry_data[exp] = r.json()
         else:
@@ -223,25 +318,72 @@ for exp in expirations:
 first_exp_data = expiry_data.get(expirations[0], {})
 net_gex = first_exp_data.get("net_exposure", 0) or 0
 
+# Determine a highlight strike for styling (front-expiry king level if available)
+highlight_strike = None
+first_nodes = first_exp_data.get("all_nodes", [])
+if isinstance(first_nodes, list) and first_nodes:
+    try:
+        df_first = pd.DataFrame(first_nodes)
+        if "strike" in df_first.columns and "is_king" in df_first.columns:
+            kings = df_first[df_first["is_king"] == True]
+            if not kings.empty:
+                highlight_strike = float(kings.iloc[0]["strike"])
+    except Exception:
+        highlight_strike = None
+
 glow_style = "border: 1px solid rgba(255, 255, 255, 0.1);"
 status_msg = f"{selected_symbol} MARKET STATE: NEUTRAL"
 status_color = "#888"
 
 if net_gex > 0:
-    glow_style = "border: 1px solid rgba(0, 255, 0, 0.3); animation: pulse-green 2s infinite;"
+    glow_style = "border: 1px solid rgba(0, 255, 0, 0.4); animation: pulse-green 2.8s infinite;"
     status_msg = f"{selected_symbol} MARKET STATE: POSITIVE GEX (LOW VOL)"
-    status_color = "#0f0"
+    status_color = "#00e676"
 elif net_gex < 0:
-    glow_style = "border: 1px solid rgba(180, 0, 255, 0.3); animation: pulse-purple 2s infinite;"
+    glow_style = "border: 1px solid rgba(213, 0, 249, 0.4); animation: pulse-purple 2.8s infinite;"
     status_msg = f"{selected_symbol} MARKET STATE: NEGATIVE GEX (HIGH VOL)"
-    status_color = "#d0f"
+    status_color = "#d500f9"
+
+last_updated = first_exp_data.get("last_updated", "")
 
 st.markdown(
     f"""
     <div class="core-widget" style="{glow_style}">
-        <h3 style="margin:0; color: {status_color}; letter-spacing: 2px; font-family: 'Roboto Mono';">
+        <div style="font-size: 15px; color: #90a4ae; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 6px;">
+            <span style="opacity:0.8;">Dealer Positioning Atlas</span>
+        </div>
+        <div style="font-size: 22px; font-weight: 600; color: {status_color}; margin-bottom: 10px;">
             {status_msg}
-        </h3>
+        </div>
+
+        <div style="display:flex; justify-content:center; gap:24px; align-items:center;">
+            <div class="ticker-pill">
+                <span class="label">Ticker</span>
+                <span style="font-weight: 700; color:#fff;">{selected_symbol}</span>
+            </div>
+            <div class="ticker-pill">
+                <span class="label">Net GEX (0DTE)</span>
+                <span class="change-up">{net_gex/1e9:+.2f}B</span>
+            </div>
+            <div class="ticker-pill">
+                <span class="label">Spot</span>
+                <span style="font-weight: 700;">${first_exp_data.get("spot", 0):,.2f}</span>
+            </div>
+            <div class="ticker-pill">
+                <span class="label">Live</span>
+                <span class="live-dot"></span>
+            </div>
+        </div>
+
+        <div style="margin-top: 12px; display:flex; justify-content:center;">
+            <div class="timestamp-badge">
+                <span style="display:inline-flex; align-items:center; margin-right:6px;">
+                    🕒
+                </span>
+                <span>Last Update: {last_updated or "N/A"}</span>
+            </div>
+        </div>
+
         <div style="display: flex; justify-content: center; gap: 30px; margin-top: 10px;
                     font-family: 'Roboto Mono'; font-size: 14px; color: #aaa;">
             <span>NET GEX (0DTE): {net_gex/1e9:+.2f}B</span>
@@ -279,7 +421,6 @@ for exp in expirations:
 
     df = pd.DataFrame(nodes)
     if "gex" not in df.columns:
-        # fallback if backend only provides strength
         df["gex"] = df["strength"] * 1e6
 
     gex_values = df["gex"].abs()
@@ -304,67 +445,37 @@ for exp in expirations:
 
             col_values.append(txt)
 
-            bias = row.get("bias", "")
             abs_val = abs(val)
 
+            # Normalize absolute GEX value into [0, 1] so stronger levels -> darker colors
             if max_gex > min_gex:
                 strength_pct = (abs_val - min_gex) / (max_gex - min_gex)
             else:
-                strength_pct = 1.0
+                strength_pct = 0.0
 
+            # Special styling for "king" levels – deep purple bar
             if row.get("is_king"):
-                col_colors.append("#8B008B")
-
-            elif bias == "magnet":
-                if strength_pct > 0.8:
-                    col_colors.append("#FFD700")
-                elif strength_pct > 0.6:
-                    col_colors.append("#FFEB3B")
-                elif strength_pct > 0.4:
-                    col_colors.append("#FFF176")
-                elif strength_pct > 0.2:
-                    col_colors.append("#FFF59D")
-                else:
-                    col_colors.append("#FFFDE7")
-
-            elif bias == "resistance":
-                if strength_pct > 0.9:
-                    col_colors.append("#1B5E20")
-                elif strength_pct > 0.75:
-                    col_colors.append("#2E7D32")
-                elif strength_pct > 0.6:
-                    col_colors.append("#388E3C")
-                elif strength_pct > 0.45:
-                    col_colors.append("#4CAF50")
-                elif strength_pct > 0.3:
-                    col_colors.append("#66BB6A")
-                elif strength_pct > 0.15:
-                    col_colors.append("#81C784")
-                elif strength_pct > 0.05:
-                    col_colors.append("#A5D6A7")
-                else:
-                    col_colors.append("#C8E6C9")
-
-            elif bias == "support":
-                if strength_pct > 0.9:
-                    col_colors.append("#0D47A1")
-                elif strength_pct > 0.75:
-                    col_colors.append("#1565C0")
-                elif strength_pct > 0.6:
-                    col_colors.append("#1976D2")
-                elif strength_pct > 0.45:
-                    col_colors.append("#1E88E5")
-                elif strength_pct > 0.3:
-                    col_colors.append("#42A5F5")
-                elif strength_pct > 0.15:
-                    col_colors.append("#64B5F6")
-                elif strength_pct > 0.05:
-                    col_colors.append("#90CAF9")
-                else:
-                    col_colors.append("#BBDEFB")
-
+                col_colors.append("#4B007F")
             else:
-                col_colors.append("#121212")
+                # Single green color scale: stronger level => darker green
+                if strength_pct > 0.90:
+                    base_color = "#1B5E20"
+                elif strength_pct > 0.75:
+                    base_color = "#2E7D32"
+                elif strength_pct > 0.60:
+                    base_color = "#388E3C"
+                elif strength_pct > 0.45:
+                    base_color = "#4CAF50"
+                elif strength_pct > 0.30:
+                    base_color = "#66BB6A"
+                elif strength_pct > 0.15:
+                    base_color = "#A5D6A7"
+                elif strength_pct > 0.05:
+                    base_color = "#C8E6C9"
+                else:
+                    base_color = "#E8F5E9"
+
+                col_colors.append(base_color)
         else:
             col_values.append("$0.0K")
             col_colors.append("#121212")
@@ -382,7 +493,15 @@ for exp in expirations:
         exp_labels.append(exp)
 
 all_values = [strike_col] + exp_columns
-all_colors = [["#000000"] * len(sorted_strikes)] + exp_colors
+
+strike_colors = []
+for s in sorted_strikes:
+    if highlight_strike is not None and abs(s - highlight_strike) < 1e-6:
+        strike_colors.append("#FFFFFF")
+    else:
+        strike_colors.append("#000000")
+
+all_colors = [strike_colors] + exp_colors
 
 fig = go.Figure(
     data=[
@@ -404,27 +523,44 @@ fig = go.Figure(
                 ),
                 fill=dict(color=all_colors),
                 height=35,
-                line=dict(width=0.5, color="#333"),
+                line_color="#111111",
             ),
         )
     ]
 )
 
 fig.update_layout(
-    margin=dict(l=0, r=0, t=0, b=0),
-    height=800,
-    paper_bgcolor="#000000",
-    plot_bgcolor="#000000",
-    hoverlabel=dict(
-        bgcolor="rgba(255, 255, 255, 0.1)",
-        font_size=14,
-        font_family="Roboto Mono",
-    ),
+    margin=dict(l=0, r=0, t=4, b=4),
+    height=640,
 )
 
 st.plotly_chart(fig, use_container_width=True)
 
-# --- FADE-IN ANIMATION ---
+# --- BOTTOM TICKER BAR ---
+spot = first_exp_data.get("spot", 0)
+st.markdown(
+    f"""
+    <div class="bottom-bar">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <div class="bottom-label">All Tickers</div>
+                <div class="bottom-value">{selected_symbol}</div>
+            </div>
+            <div>
+                <div class="bottom-label">Last</div>
+                <div class="bottom-value">${spot:,.2f}</div>
+            </div>
+            <div>
+                <div class="bottom-label">Change</div>
+                <div class="bottom-change">+0.00 (+0.00%)</div>
+            </div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Small JS hook to fade-in plotly table
 st.markdown(
     """
     <script>
