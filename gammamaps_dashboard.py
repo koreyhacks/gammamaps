@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
-import plotly_graphics as go
+import plotly.graph_objects as go
 from streamlit_autorefresh import st_autorefresh
 from datetime import datetime
 
